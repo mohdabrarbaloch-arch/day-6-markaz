@@ -1,5 +1,6 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-q --strict-markers"
 filterwarnings = ["error::DeprecationWarning:app.*"]
 
@@ -11,10 +12,13 @@ target-version = "py311"
 select = ["E", "F", "W", "I", "B", "UP", "C4", "SIM", "PIE", "PT", "RET", "PL"]
 ignore = [
     "PLR0913",  # FastAPI handlers legitimately take many injected params
+    "B008",     # Depends()/Query() in defaults is the required FastAPI idiom
+    "PLR0912",  # routing handlers branch on status by design
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["PLR2004", "S101"]
+"tests/*" = ["PLR2004", "S101", "ARG001", "ARG002"]
+"app/engine/catalog.py" = ["E501"]
 
 [tool.black]
 line-length = 100

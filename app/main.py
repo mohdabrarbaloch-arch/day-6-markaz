@@ -6,6 +6,7 @@ import logging
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
@@ -130,7 +131,7 @@ def _not_found(request: Request, exc: StarletteHTTPException):  # type: ignore[n
             },
             headers=getattr(exc, "headers", None),
         )
-    if exc.status_code == 404 and STATIC_DIR.exists():
+    if exc.status_code == HTTPStatus.NOT_FOUND and STATIC_DIR.exists():
         return FileResponse(STATIC_DIR / "index.html")
     return JSONResponse(
         status_code=exc.status_code,

@@ -20,6 +20,10 @@ VRAM_SAFETY_FACTOR = 1.25
 # deployment is fine, the *next* one of this size will not be.
 HEADROOM_WARNING_RATIO = 0.80
 
+# Past this many replicas in one deployment, suggest splitting across regions for
+# blast-radius reasons. Not a limit -- a nudge, so it warns rather than refuses.
+LARGE_REPLICA_THRESHOLD = 8
+
 
 @dataclass(frozen=True)
 class CommittedDeployment:
@@ -199,7 +203,7 @@ def evaluate(
                 )
             )
 
-    if accepted and replicas > 8:
+    if accepted and replicas > LARGE_REPLICA_THRESHOLD:
         warnings.append(
             Reason(
                 code="large_replica_count",
