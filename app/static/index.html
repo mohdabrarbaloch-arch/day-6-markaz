@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Markaz — an enterprise AI control plane. Declare what runs where, at what cost, and find out whether it fits before you deploy." />
+  <title>Markaz — AI Control Plane</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Cpath d='M9 23V9h3.4l3.6 6 3.6-6H23v14h-3.2v-8.6L16.6 19h-1.2L12.2 14.4V23z' fill='%23ffb454'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <!-- ─────────────────────────────────────────────────────── auth screen ───────────────────────────────────────── -->
+  <section id="auth-screen" class="auth-shell" hidden>
+    <div class="auth-card">
+      <div class="auth-brand">
+        <span class="brand-mark">M</span>
+        <div>
+          <h1>Markaz</h1>
+          <p class="brand-sub">AI control plane</p>
+        </div>
+      </div>
+
+      <p class="auth-lede">
+        Declare what should run, where, and at what cost.
+        Markaz does the arithmetic and tells you whether it fits — before you deploy.
+      </p>
+
+      <div class="tabs" role="tablist">
+        <button class="tab is-active" role="tab" data-auth-tab="login" aria-selected="true">Sign in</button>
+        <button class="tab" role="tab" data-auth-tab="register" aria-selected="false">Create account</button>
+      </div>
+
+      <form id="auth-form" class="auth-form" autocomplete="on" novalidate>
+        <label class="field" data-only="register">
+          <span class="field-label">Display name</span>
+          <input name="display_name" type="text" placeholder="ABraz Baloch" autocomplete="name" />
+        </label>
+
+        <label class="field">
+          <span class="field-label">Email</span>
+          <input name="email" type="email" placeholder="you@company.com" autocomplete="username" required />
+        </label>
+
+        <label class="field">
+          <span class="field-label">Password</span>
+          <input name="password" type="password" placeholder="At least 8 characters" autocomplete="current-password" required />
+          <span class="field-hint" data-only="register">Mix letters with digits or symbols.</span>
+        </label>
+
+        <p id="auth-error" class="form-error" role="alert" hidden></p>
+
+        <button type="submit" class="btn btn-primary btn-block" id="auth-submit">
+          <span class="btn-label">Sign in</span>
+        </button>
+      </form>
+    </div>
+
+    <p class="auth-foot">
+      Demo is open registration — your data is yours and private to your account.
+    </p>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────── app shell ────────────────────────────────────────── -->
+  <div id="app-shell" class="app-shell" hidden>
+
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="topbar-brand">
+          <span class="brand-mark brand-mark-sm">M</span>
+          <span class="topbar-name">Markaz</span>
+        </div>
+
+        <nav class="nav" id="nav" aria-label="Sections">
+          <button class="nav-item is-active" data-view="regions">Regions</button>
+          <button class="nav-item" data-view="deployments">Deployments</button>
+          <button class="nav-item" data-view="pipelines">Pipelines</button>
+          <button class="nav-item" data-view="drift">Drift</button>
+        </nav>
+
+        <div class="topbar-user">
+          <span id="user-name" class="user-name"></span>
+          <button class="btn btn-ghost btn-sm" id="sign-out">Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main" id="main">
+
+      <!-- ───────────────────────────────────────── regions ─────────────────────────────────────── -->
+      <section class="view is-active" data-view="regions">
+        <div class="view-head">
+          <div>
+            <h2>Regions</h2>
+            <p class="view-sub">Committed capacity is a live sum over your active deployments.</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" data-action="refresh-regions">Refresh</button>
+        </div>
+
+        <div id="regions-grid" class="region-grid" aria-live="polite">
+          <div class="skeleton-row"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+        </div>
+
+        <div class="panel" id="catalog-panel">
+          <div class="panel-head">
+            <h3>Catalog</h3>
+            <p class="panel-sub">Reference data. Changing it is a code change, not a UI action.</p>
+          </div>
+          <div class="catalog-cols" id="catalog-body"></div>
+        </div>
+      </section>
+
+      <!-- ───────────────────────────────────────── deployments ──────────────────────────────────── -->
+      <section class="view" data-view="deployments">
+        <div class="view-head">
+          <div>
+            <h2>Deployments</h2>
+            <p class="view-sub">Plan runs the admission check without writing anything.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" data-action="toggle-plan">New deployment</button>
+        </div>
+
+        <!-- plan form -->
+        <form id="plan-form" class="panel panel-form" hidden novalidate>
+          <div class="panel-head">
+            <h3>Plan a deployment</h3>
+            <p class="panel-sub">Arithmetic, not vibes — every rejection carries its numbers.</p>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span class="field-label">Name</span>
+              <input name="name" type="text" placeholder="llama-prod" required />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Model</span>
+              <select name="model_code" id="sel-model" required></select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Region</span>
+              <select name="region_code" id="sel-region" required></select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">GPU shape</span>
+              <select name="sku_code" id="sel-sku" required></select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Replicas</span>
+              <input name="replicas" type="number" min="1" max="64" value="2" required />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Monthly budget <span class="opt">optional</span></span>
+              <input name="monthly_budget_usd" type="number" min="0" step="100" placeholder="5000" />
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" data-action="plan">Plan</button>
+            <button type="submit" class="btn btn-primary" id="deploy-btn" disabled>Deploy</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-action="toggle-plan">Cancel</button>
+          </div>
+
+          <div id="plan-result" class="plan-result" hidden aria-live="polite"></div>
+        </form>
+
+        <div id="deployments-list" class="stack" aria-live="polite"></div>
+      </section>
+
+      <!-- ───────────────────────────────────────── pipelines ─────────────────────────────────────── -->
+      <section class="view" data-view="pipelines">
+        <div class="view-head">
+          <div>
+            <h2>Pipelines</h2>
+            <p class="view-sub">A broken graph is rejected at write time, not at 3 a.m.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" data-action="toggle-pipeline">New pipeline</button>
+        </div>
+
+        <form id="pipeline-form" class="panel panel-form" hidden novalidate>
+          <div class="panel-head">
+            <h3>Define a pipeline</h3>
+            <p class="panel-sub">One step per line, one edge per line. Cycles are refused.</p>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span class="field-label">Name</span>
+              <input name="name" type="text" placeholder="rag-indexer" required />
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Description <span class="opt">optional</span></span>
+              <input name="description" type="text" placeholder="Nightly RAG reindex" />
+            </label>
+          </div>
+
+          <div class="form-grid form-grid-2">
+            <label class="field">
+              <span class="field-label">Steps <span class="opt">key, operation, seconds</span></span>
+              <textarea name="steps" rows="5" spellcheck="false" placeholder="ingest, fetch, 60&#10;chunk, split, 120&#10;embed, encode, 300"></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label">Edges <span class="opt">before, after</span></span>
+              <textarea name="edges" rows="5" spellcheck="false" placeholder="ingest, chunk&#10;chunk, embed"></textarea>
+            </label>
+          </div>
+
+          <p id="pipeline-error" class="form-error" role="alert" hidden></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Validate &amp; save</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-action="toggle-pipeline">Cancel</button>
+          </div>
+        </form>
+
+        <div id="pipelines-list" class="stack" aria-live="polite"></div>
+      </section>
+
+      <!-- ───────────────────────────────────────── drift ────────────────────────────────────────────────── -->
+      <section class="view" data-view="drift">
+        <div class="view-head">
+          <div>
+            <h2>Drift</h2>
+            <p class="view-sub">Declared shape vs the last reported cluster reading.</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" data-action="refresh-drift">Refresh</button>
+        </div>
+
+        <div id="drift-summary" class="stat-row" aria-live="polite"></div>
+        <div id="drift-list" class="stack"></div>
+      </section>
+
+    </main>
+
+    <footer class="foot">
+      <span>Markaz v1.0.0</span>
+      <span class="foot-dot">·</span>
+      <a href="/api/docs" target="_blank" rel="noopener">API reference</a>
+      <span class="foot-dot">·</span>
+      <span class="foot-note">Admission control is arithmetic over declared capacity, not a real cluster poll.</span>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="/static/js/app.js" defer></script>
+</body>
+</html>
